@@ -12,5 +12,5 @@ class SignInRequest(BaseModel):
     password: str
 
 class AuthResponse(BaseModel):
-    token : str
-    user : UserPublic
+    token: str
+    user: UserPublic

@@ -28,7 +28,9 @@ class Subscription(Document):
 
     @field_validator("start_date")
     @classmethod
-    def validate_start_date_in_past(cls, value : datetime) -> datetime:
+    def validate_start_date_in_past(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
         if value > datetime.now(timezone.utc):
             raise ValueError("Start date cannot be in the future")
         return value

@@ -8,7 +8,7 @@ client: AsyncIOMotorClient | None = None
 
 async def connect_to_database():
     global client
-    client = AsyncIOMotorClient(settings.MONGODB_URI)
+    client = AsyncIOMotorClient(settings.MONGODB_URI, tz_aware=True)
     db = client.get_default_database()
     await init_beanie(database=db, document_models=[User, Subscription]) # Models to be added here
     print("Connected to MongoDB")
