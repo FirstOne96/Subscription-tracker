@@ -6,6 +6,7 @@ from beanie import Insert, PydanticObjectId, Replace, SaveChanges, before_event
 from bson.errors import InvalidId
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta, timezone
+from tasks.reminder import schedule_reminders
 
 def to_response(sub: Subscription) -> SubscriptionResponse:
     return SubscriptionResponse(
@@ -51,7 +52,10 @@ async def create_subscription(
         user=current_user,
     )
     await sub.insert()
-    # In Stage 9: schedule_reminders.delay(str(sub.id))
+    
+    # Schedule reminder emails as a background task
+    schedule_reminders.delay(str(sub.id))
+    
     return to_response(sub)
 
 

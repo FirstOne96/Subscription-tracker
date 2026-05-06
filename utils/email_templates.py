@@ -73,7 +73,6 @@ def reminder_1_day(info: MailInfo) -> tuple[str, str]:
         <li>Payment method: {info.payment_method}</li>
     </ul>
     <p>If you want to make changes before the renewal, please do so now in your account settings.</p>
-    <p>Thanks for using SubDub!</p>
     """
     return subject, body
 

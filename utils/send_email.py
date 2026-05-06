@@ -1,5 +1,4 @@
 from fastapi_mail import MessageSchema, MessageType
-from beanie import PydanticObjectId
 from config.mail import mail
 from models.subscription import Subscription
 from models.user import User
