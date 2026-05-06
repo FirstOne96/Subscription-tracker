@@ -1,46 +1,54 @@
-import asyncio
-from datetime import datetime, timedelta, timezone
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+
 from config.database import connect_to_database, close_database_connection
-from models.user import User
-from models.subscription import Subscription
+from middleware.rate_limit import limiter
+from middleware.error_handler import register_exception_handlers
 
-async def main():
+from routers.auth import router as auth_router
+from routers.users import router as users_router
+from routers.subscriptions import router as subscriptions_router
+from routers.workflows import router as workflows_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     await connect_to_database()
-
-    # Create a user
-    user = User(name="John Doe", email="john.doe@example.com", password="securepassword")
-    await user.insert()
-    print(f"User created with ID: {user.id}")
-
-    sub1 = Subscription(
-        name="Netflix",
-        price=9.99,
-        currency="USD",
-        frequency="monthly",
-        category="entertainment",
-        payment_method="credit card",
-        start_date=datetime.now(timezone.utc) - timedelta(days=15),
-        user=user
-    )
-
-    await sub1.insert()
-    print(f"Subscription created with ID: {sub1.id}")
-
-    sub2 = Subscription(
-        name="Spotify",
-        price=89,
-        currency="CZK",
-        frequency="monthly",
-        category="entertainment",
-        payment_method="credit card",
-        start_date=datetime.now(timezone.utc) - timedelta(days=40),
-        user=user
-    )
-
-    await sub2.insert()
-    print(f"Subscription created with ID: {sub2.id}")
-
+    yield
     await close_database_connection()
 
-if __name__ == "__main__":
-    asyncio.run(main())
+
+app = FastAPI(
+    title="Subscription Management API",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Custom error handlers
+register_exception_handlers(app)
+
+# Routers
+app.include_router(auth_router)
+app.include_router(users_router)
+app.include_router(subscriptions_router)
+app.include_router(workflows_router)
+
+
+@app.get("/")
+async def root():
+    return {"title": "Subscription Management API"}
