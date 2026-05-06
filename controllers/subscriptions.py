@@ -105,16 +105,3 @@ async def cancel_subscription(sub_id: str) -> SubscriptionResponse:
     sub.status = "cancelled"
     await sub.save()
     return to_response(sub)
-
-
-@before_event(Insert, Replace, SaveChanges)
-async def compute_renewal_and_status(self):
-    days = {"daily": 1, "weekly": 7, "monthly": 30, "yearly": 365}[self.frequency]
-    if self.renewal_date is None:
-        self.renewal_date = self.start_date + timedelta(days=days)
-    
-    # Don't override an explicit "cancelled" status
-    if self.status != "cancelled" and self.renewal_date < datetime.now(timezone.utc):
-        self.status = "expired"
-
-        

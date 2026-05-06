@@ -41,6 +41,6 @@ class Subscription(Document):
         if self.renewal_date is None:
             self.renewal_date = self.start_date + timedelta(days=days)
 
-        if self.renewal_date and self.renewal_date < datetime.now(timezone.utc):
+        if self.status != "cancelled" and self.renewal_date < datetime.now(timezone.utc):
             self.status = "expired"
-        
+            
