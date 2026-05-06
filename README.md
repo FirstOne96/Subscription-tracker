@@ -1,23 +1,32 @@
-# Subscription Management API
+# 📦 Subscription Management API
 
-A production-ready REST API for managing user subscriptions, with JWT authentication, automated reminder emails scheduled via background workers, and per-route rate limiting. Built in Python with FastAPI, deployed on Railway.
+[![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110.2-green?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Uvicorn](https://img.shields.io/badge/Uvicorn-0.29.0-Informational?logo=uvicorn)](https://www.uvicorn.org/)
+[![MongoDB Atlas](https://img.shields.io/badge/MongoDB%20Atlas-Cloud-success?logo=mongodb)](https://www.mongodb.com/atlas)
+[![Redis](https://img.shields.io/badge/Redis-InMemoryDB-ff0000?logo=redis)](https://redis.io/)
+[![Celery](https://img.shields.io/badge/Celery-Async-orange?logo=celery)](https://docs.celeryq.dev/)
+[![Pytest](https://img.shields.io/badge/Pytest-Testing-yellow?logo=pytest)](https://docs.pytest.org/)
+[![Railway](https://img.shields.io/badge/Railway-Hosting-purple?logo=railway)](https://railway.app/)
+
+A production-ready REST API for managing user subscriptions, with JWT authentication, automated reminder emails scheduled via background workers, and per-route rate limiting. Built in Python with FastAPI.
 
 **Live API:** https://web-production-bba32.up.railway.app/  
 **Interactive docs (Swagger UI):** https://web-production-bba32.up.railway.app/docs
 
-> _This project is a Python reimplementation of [Adrian Hajdin's subscription-tracker-api](https://github.com/adrianhajdin/subscription-tracker-api), which was originally built in JavaScript with Express, Mongoose, and Upstash QStash. I wanted to learn the modern Python web stack by rebuilding it end-to-end with FastAPI, Beanie, and Celery._
+> _This project is a Python reimplementation of [Adrian Hajdin's subscription-tracker-api](https://github.com/adrianhajdin/subscription-tracker-api), which was originally built in JavaScript with Express, MongoDB, and more._
 
 ---
 
-## What this app does
+## 💡 What this app does
 
-A signed-up user can create subscriptions (Netflix, Spotify, gym membership, etc.) with a name, price, frequency, and start date. The app automatically computes when the subscription will renew based on its frequency, and arranges for reminder emails to be sent **7, 5, 2, and 1 days before** each renewal — without the user doing anything.
+A signed-up user can create subscriptions (Netflix, Spotify, gym membership, etc.) with a name, price, frequency, and start date. The app automatically computes when the subscription will renew based on this info, and sends email reminders a few days before.
 
-The reminders aren't sent during the API request that creates the subscription; that would be impossible (the request finishes in milliseconds, but the reminder isn't due for days). Instead, the API enqueues a job in Redis, and a separate worker process picks it up, computes the four future reminder times, and schedules four more jobs to execute at those exact times. When each reminder's time arrives — minutes, hours, or weeks later — the worker fetches the subscription from MongoDB, finds the linked user, formats an HTML email, and sends it via Gmail SMTP.
+The reminders aren't sent during the API request that creates the subscription; that would be impossible (the request finishes in milliseconds, but the reminder isn't due for days). Instead, the API enqueues a background job to send a reminder email at the right time.
 
 ---
 
-## Tech stack
+## 🛠️ Tech stack
 
 | Layer                | Technology                              | Purpose                                                    |
 | -------------------- | --------------------------------------- | ---------------------------------------------------------- |
@@ -35,7 +44,7 @@ The reminders aren't sent during the API request that creates the subscription; 
 
 ---
 
-## Architecture
+## 🏛️ Architecture
 
 The application is composed of three independent services that communicate through MongoDB and Redis:
 
@@ -75,14 +84,13 @@ The application is composed of three independent services that communicate throu
                                └─────────────────┘
 ```
 
-### Why three services?
+### 🤔 Why three services?
 
-The web service handles HTTP requests and finishes them quickly. It can't be the one that "waits 7 days then sends an email" — there'd be nothing waiting; FastAPI requests don't persist that long. The worker is a separate long-running process that polls Redis for due tasks. Redis sits between them as a durable queue, so queued jobs survive both web restarts and worker restarts.
-
+The web service handles HTTP requests and finishes them quickly. It can't be the one that "waits 7 days then sends an email" — there'd be nothing waiting; FastAPI requests don't persist that long. The Celery worker handles that.
 
 ---
 
-## Project structure
+## 📂 Project structure
 
 ```
 Subscription-Management-System/
@@ -149,11 +157,11 @@ Subscription-Management-System/
 
 ---
 
-## API reference
+## 📚 API reference
 
 All endpoints are prefixed with `/api/v1`. Full interactive documentation is available at `/docs` on the live deployment.
 
-### Auth (`/api/v1/auth`)
+### 🔐 Auth (`/api/v1/auth`)
 
 | Method | Path        | Description                       | Auth | Rate limit          |
 | ------ | ----------- | --------------------------------- | ---- | ------------------- |
@@ -161,7 +169,7 @@ All endpoints are prefixed with `/api/v1`. Full interactive documentation is ava
 | POST   | `/sign-in`  | Verify password, return JWT       | —    | 5 / 10 seconds / IP |
 | POST   | `/sign-out` | Stub (token discarded client-side)| —    | —                   |
 
-### Users (`/api/v1/users`)
+### 👤 Users (`/api/v1/users`)
 
 | Method | Path           | Description              | Auth |
 | ------ | -------------- | ------------------------ | ---- |
@@ -171,7 +179,7 @@ All endpoints are prefixed with `/api/v1`. Full interactive documentation is ava
 | PUT    | `/{user_id}`   | _501 Not Implemented_    | —    |
 | DELETE | `/{user_id}`   | _501 Not Implemented_    | —    |
 
-### Subscriptions (`/api/v1/subscriptions`)
+### 📄 Subscriptions (`/api/v1/subscriptions`)
 
 | Method | Path                    | Description                                         | Auth |
 | ------ | ----------------------- | --------------------------------------------------- | ---- |
@@ -182,7 +190,7 @@ All endpoints are prefixed with `/api/v1`. Full interactive documentation is ava
 | POST   | `/`                     | Create subscription, enqueue reminder schedule      | ✓    |
 | PUT    | `/{sub_id}/cancel`      | Set status to "cancelled"                           | —    |
 
-### Workflows (`/api/v1/workflows`)
+### 🛠️ Workflows (`/api/v1/workflows`)
 
 | Method | Path                     | Description                                  | Auth |
 | ------ | ------------------------ | -------------------------------------------- | ---- |
@@ -193,16 +201,16 @@ _Swagger UI auto-generated from FastAPI's type annotations and Pydantic schemas.
 
 ---
 
-## Running locally
+## 🖥️ Running locally
 
-### Prerequisites
+### ⚙️ Prerequisites
 
 - Python 3.12
 - A MongoDB Atlas account (free tier is fine)
 - Redis (run via Docker, native install, or a managed provider)
 - A Gmail account with an [app password](https://myaccount.google.com/apppasswords) generated for SMTP
 
-### Setup
+### 🔧 Setup
 
 ```bash
 # Clone and enter the project
@@ -235,7 +243,7 @@ MAIL_SSL_TLS=False
 ALLOWED_ORIGINS=
 ```
 
-### Start Redis
+### 🗄️ Start Redis
 
 If you have Docker:
 ```bash
@@ -244,7 +252,7 @@ docker run -d --name redis -p 6379:6379 --restart unless-stopped redis
 
 Verify it's reachable: `redis-cli ping` should return `PONG`.
 
-### Run the application
+### 🚀 Run the application
 
 You'll need three things running. Open three terminals (or one with tmux/split panes):
 
@@ -264,7 +272,7 @@ Visit http://localhost:8000/docs to interact with the API.
 
 ---
 
-## Running tests
+## ✅ Running tests
 
 ```bash
 pytest tests/ -v
@@ -274,7 +282,7 @@ The tests run against a separate `subscription_db_test` database in your Atlas c
 
 ---
 
-## Deployment
+## ☁️ Deployment
 
 The live deployment is on **Railway**, with three services:
 
@@ -282,7 +290,7 @@ The live deployment is on **Railway**, with three services:
 2. **Worker service** — runs `celery -A config.celery_app worker --loglevel=info --concurrency=2`
 3. **Redis service** — Railway-managed, referenced via `${{ Redis.REDIS_URL }}`
 
-Both web and worker services pull from the same GitHub repository, with different start commands. They share the same environment variables (set independently on each service in Railway's dashboard, since variables are not shared between services).
+Both web and worker services pull from the same GitHub repository, with different start commands. They share the same environment variables (set independently on each service in Railway's dashboard, securely).
 
 MongoDB Atlas hosts the production database (`subscription_db_prod`), with network access opened to `0.0.0.0/0` (still gated by the database password).
 
@@ -300,5 +308,6 @@ _Two production databases: `subscription_db_prod` (deployed) and `subscription_d
 
 ---
 
-## 📞 Contact:
-Andrii Kozlov - andrijkozlov96@gmail.com  | https://t.me/AndrewKozz | https://www.linkedin.com/in/andrii-kozlov96<br>
+## 📞 Contact
+
+Andrii Kozlov - andrijkozlov96@gmail.com  | https://t.me/AndrewKozz | https://www.linkedin.com/in/andrii
