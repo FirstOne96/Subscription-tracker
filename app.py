@@ -13,6 +13,8 @@ from routers.users import router as users_router
 from routers.subscriptions import router as subscriptions_router
 from routers.workflows import router as workflows_router
 
+from config.env import settings
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,7 +32,7 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.ALLOWED_ORIGINS.split(",") if settings.ALLOWED_ORIGINS else ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

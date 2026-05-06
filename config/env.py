@@ -8,6 +8,8 @@ class Settings(BaseSettings):
         case_sensitive=True
     )
 
+    ALLOWED_ORIGINS: str = ""
+
     PORT: int = 8000
     SERVER_URL: str = "http://localhost:8000"
     NODE_ENV: str = "development"
