@@ -11,17 +11,18 @@ class SubscriptionCreate(BaseModel):
     category: Literal["entertainment", "utilities", "education", "health", "sport", "finance", "other"]
     payment_method: str
     start_date: datetime
+    renewal_date: Optional[datetime] = None
 
 class SubscriptionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
     name: str
     price: float
-    currency: str
-    frequency: str
-    category: str
-    payment_method: str
-    status: str
+    currency: Literal["USD", "EUR", "CZK", "UAH"]
+    frequency: Literal["daily", "weekly", "monthly", "yearly"]
+    category: Literal["entertainment", "utilities", "education", "health", "sport", "finance", "other"]
+    payment_method: str 
+    status: Literal["active", "cancelled", "expired"]
     start_date: datetime
     renewal_date: datetime
     user_id: str
