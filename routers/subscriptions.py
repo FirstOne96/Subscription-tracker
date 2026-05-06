@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Request
 from controllers.subscriptions import (
     get_subscriptions,
     get_subscription,
@@ -11,6 +11,7 @@ from controllers.subscriptions import (
 from middleware.auth import get_current_user
 from models.user import User
 from schemas.subscription import SubscriptionCreate, SubscriptionResponse
+from middleware.rate_limit import limiter
 
 
 router = APIRouter(prefix="/api/v1/subscriptions", tags=["subscriptions"])
@@ -35,7 +36,9 @@ async def get_user_subscriptions_route(
     response_model=SubscriptionResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("30/1 minute")
 async def create_subscription_route(
+    request: Request,
     body: SubscriptionCreate,
     current_user: User = Depends(get_current_user),
 ) -> SubscriptionResponse:
@@ -49,7 +52,8 @@ async def get_subscriptions_route() -> List[SubscriptionResponse]:
 
 # Generic paths last
 @router.put("/{sub_id}/cancel", response_model=SubscriptionResponse)
-async def cancel_subscription_route(sub_id: str) -> SubscriptionResponse:
+@limiter.limit("30/1 minute")
+async def cancel_subscription_route(request: Request, sub_id: str) -> SubscriptionResponse:
     return await cancel_subscription(sub_id)
 
 
