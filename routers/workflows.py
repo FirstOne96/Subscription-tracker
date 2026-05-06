@@ -1,8 +1,10 @@
 from fastapi import APIRouter
+from controllers.workflows import send_reminders, ReminderRequest
+
 
 router = APIRouter(prefix="/api/v1/workflows", tags=["workflows"])
 
 
-@router.get("/healthcheck")
-async def healthcheck():
-    return {"router": "workflows", "status": "ok"}
+@router.post("/subscription/reminder")
+async def send_reminders_route(body: ReminderRequest) -> dict:
+    return await send_reminders(body)
